@@ -41,6 +41,48 @@ edu_state <- get_acs(
 ```
 
 ```{r}
+#| message: false
+age_ca <- get_acs(
+  geography = "county",
+  variables = c(
+    median_age = "B01002_001",
+    population = "B01003_001"
+  ),
+  year = 2020,
+  state = "CA",
+  geometry = FALSE
+)
+```
+
+```{r}
+age_ca |>
+  select(GEOID, NAME, variable, estimate) |>
+  pivot_wider(names_from = variable, values_from = estimate) |>
+  mutate(
+    label = if_else(
+      min_rank(desc(population)) <= 5,
+      NAME,
+      NA_character_
+    )
+  ) |>
+  ggplot(aes(x = population, y = median_age)) +
+  geom_point() +
+  geom_text(aes(label = label), check_overlap = TRUE, hjust = -0.1) +
+  scale_x_log10(labels = scales::label_comma()) +
+  labs(
+    title = "Median Age and Population Across California Counties",
+    x = "County population (log scale)",
+    y = "Median age (years)",
+    caption = "Source: U.S. Census Bureau, 2020 American Community Survey (ACS) 5-year estimates."
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.caption = element_text(hjust = 0)
+  )
+```
+
+```{r}
 edu_state |>
   filter(variable %in% c("bachelors", "masters", "professional", "doctorate")) |>
   group_by(GEOID, NAME) |>
